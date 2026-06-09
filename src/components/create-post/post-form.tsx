@@ -132,10 +132,12 @@ export function PostForm({
     "🇯🇵 当达到这种速度时，已经不再是地面移动，而是以音速前进 🚀🌍 这段模拟展示了如果以 马赫 1（约 1330 公里/小时）的速度乘坐超音速列车穿越日本，会是一种怎样的体验。 目前，日本最快的列车运行速度约为"
   );
   const [autoReelInterval, setAutoReelInterval] = useState(5);
-
-  const coverFile2 = galleryItems.find(
-    (item) => item.file_name === "2.jpg" || item.file_name.toLowerCase().endsWith("2.jpg")
-  );
+  const [autoReelCoverItem, setAutoReelCoverItem] = useState<SelectedMediaItem | null>(() => {
+    const defaultCover = galleryItems.find(
+      (item) => item.file_name === "2.jpg" || item.file_name.toLowerCase().endsWith("2.jpg")
+    );
+    return defaultCover ? { mediaId: defaultCover.id, publicUrl: defaultCover.public_url } : null;
+  });
 
   const { status: polledStatus } = usePostStatus({
     postId: resultPostId ?? "",
@@ -209,7 +211,7 @@ export function PostForm({
       const body: Record<string, unknown> = {
         video_media_ids: autoReelSelectedVideos,
         caption: autoReelCaption,
-        cover_media_id: coverFile2?.id || undefined,
+        cover_media_id: autoReelCoverItem?.mediaId || undefined,
         interval_minutes: autoReelInterval,
         audio_name: "Original audio",
       };
@@ -369,6 +371,10 @@ export function PostForm({
               onClick={() => {
                 setIsAutoReelFlow(true);
                 setAutoReelSelectedVideos([]);
+                const defaultCover = galleryItems.find(
+                  (item) => item.file_name === "2.jpg" || item.file_name.toLowerCase().endsWith("2.jpg")
+                );
+                setAutoReelCoverItem(defaultCover ? { mediaId: defaultCover.id, publicUrl: defaultCover.public_url } : null);
                 setStep("auto_reel_choose");
               }}
               className="flex items-start gap-3 p-4 rounded-xl border border-primary/30 bg-primary/5 hover:border-primary hover:bg-primary/10 transition-all text-left cursor-pointer relative overflow-hidden group shadow-sm"
@@ -411,23 +417,36 @@ export function PostForm({
               <h2 className="text-base font-bold tracking-[-0.8px] font-[family-name:var(--font-heading)]">
                 Choose your Reels
               </h2>
-              <Button
-                variant="secondary"
-                className="px-3 py-1.5 text-[11px]"
-                onClick={() => {
-                  const allVideoIds = galleryItems.filter((i) => i.kind === "video").map((i) => i.id);
-                  if (autoReelSelectedVideos.length === allVideoIds.length) {
-                    setAutoReelSelectedVideos([]);
-                  } else {
-                    setAutoReelSelectedVideos(allVideoIds);
-                  }
-                }}
-              >
-                {autoReelSelectedVideos.length === galleryItems.filter((i) => i.kind === "video").length
-                  ? "Deselect All"
-                  : "Select All"}
-              </Button>
             </div>
+
+            {galleryItems.filter((item) => item.kind === "video").length > 0 && (
+              <div className="flex items-center justify-between p-3 mb-3 rounded-xl border border-border bg-surface-elevated select-none">
+                <label className="flex items-center gap-3 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={
+                      galleryItems.filter((i) => i.kind === "video").length > 0 &&
+                      autoReelSelectedVideos.length === galleryItems.filter((i) => i.kind === "video").length
+                    }
+                    onChange={(e) => {
+                      const allVideoIds = galleryItems.filter((i) => i.kind === "video").map((i) => i.id);
+                      if (e.target.checked) {
+                        setAutoReelSelectedVideos(allVideoIds);
+                      } else {
+                        setAutoReelSelectedVideos([]);
+                      }
+                    }}
+                    className="w-4 h-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
+                  />
+                  <span className="text-xs font-semibold text-foreground">
+                    Select All Videos ({galleryItems.filter((i) => i.kind === "video").length})
+                  </span>
+                </label>
+                <span className="text-[11px] text-text-muted font-medium">
+                  {autoReelSelectedVideos.length} of {galleryItems.filter((i) => i.kind === "video").length} selected
+                </span>
+              </div>
+            )}
 
             <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
               {galleryItems.filter((item) => item.kind === "video").length === 0 ? (
@@ -547,25 +566,17 @@ export function PostForm({
               />
 
               <div className="space-y-2">
-                <p className="text-xs font-semibold text-foreground">Cover Page Image</p>
-                {coverFile2 ? (
-                  <div className="p-3 rounded-lg border border-success/20 bg-success/5 space-y-3">
-                    <p className="text-xs text-success font-medium flex items-center gap-1">
-                      <CheckCircle size={14} /> Always use `2.jpg` (found in gallery)
-                    </p>
-                    <img
-                      src={coverFile2.public_url}
-                      alt="Cover 2.jpg"
-                      className="w-32 h-48 object-cover rounded-lg border border-border"
-                    />
-                  </div>
-                ) : (
-                  <div className="p-3 rounded-lg border border-warning/20 bg-warning/5">
-                    <p className="text-xs text-warning font-medium">
-                      ⚠ Cover image `2.jpg` not found in gallery. Please upload a file named `2.jpg` to the gallery to use it as cover.
-                    </p>
-                  </div>
-                )}
+                <p className="text-xs font-semibold text-foreground">Cover Page Image (optional)</p>
+                <p className="text-xs text-text-muted">
+                  Choose a cover page image to be used for all reels in this batch.
+                </p>
+                <MediaInput
+                  galleryItems={galleryItems}
+                  allowedKinds={["image"] as const}
+                  accept="image/jpeg,image/png,image/webp"
+                  value={autoReelCoverItem}
+                  onChange={setAutoReelCoverItem}
+                />
               </div>
 
               {error && (
