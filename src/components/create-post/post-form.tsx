@@ -132,12 +132,7 @@ export function PostForm({
     "🇯🇵 当达到这种速度时，已经不再是地面移动，而是以音速前进 🚀🌍 这段模拟展示了如果以 马赫 1（约 1330 公里/小时）的速度乘坐超音速列车穿越日本，会是一种怎样的体验。 目前，日本最快的列车运行速度约为"
   );
   const [autoReelInterval, setAutoReelInterval] = useState(5);
-  const [autoReelCoverItem, setAutoReelCoverItem] = useState<SelectedMediaItem | null>(() => {
-    const defaultCover = galleryItems.find(
-      (item) => item.file_name === "2.jpg" || item.file_name.toLowerCase().endsWith("2.jpg")
-    );
-    return defaultCover ? { mediaId: defaultCover.id, publicUrl: defaultCover.public_url } : null;
-  });
+  const [autoReelCoverItem, setAutoReelCoverItem] = useState<SelectedMediaItem | null>(null);
 
   const { status: polledStatus } = usePostStatus({
     postId: resultPostId ?? "",
@@ -371,10 +366,7 @@ export function PostForm({
               onClick={() => {
                 setIsAutoReelFlow(true);
                 setAutoReelSelectedVideos([]);
-                const defaultCover = galleryItems.find(
-                  (item) => item.file_name === "2.jpg" || item.file_name.toLowerCase().endsWith("2.jpg")
-                );
-                setAutoReelCoverItem(defaultCover ? { mediaId: defaultCover.id, publicUrl: defaultCover.public_url } : null);
+                setAutoReelCoverItem(null);
                 setStep("auto_reel_choose");
               }}
               className="flex items-start gap-3 p-4 rounded-xl border border-primary/30 bg-primary/5 hover:border-primary hover:bg-primary/10 transition-all text-left cursor-pointer relative overflow-hidden group shadow-sm"
@@ -390,7 +382,7 @@ export function PostForm({
                   Auto Reel Uploader
                 </p>
                 <p className="text-xs text-text-muted mt-0.5">
-                  Batch post reels with auto cover (2.jpg) & delay interval.
+                  Batch post reels with custom cover & delay interval.
                 </p>
               </div>
             </button>
@@ -570,13 +562,85 @@ export function PostForm({
                 <p className="text-xs text-text-muted">
                   Choose a cover page image to be used for all reels in this batch.
                 </p>
-                <MediaInput
-                  galleryItems={galleryItems}
-                  allowedKinds={["image"] as const}
-                  accept="image/jpeg,image/png,image/webp"
-                  value={autoReelCoverItem}
-                  onChange={setAutoReelCoverItem}
-                />
+                <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1 border border-border rounded-xl p-3 bg-surface/30">
+                  {galleryItems.filter((item) => item.kind === "image").length === 0 ? (
+                    <div className="text-center py-8 text-text-muted text-sm border border-dashed border-border rounded-xl bg-surface">
+                      No images found in your gallery. Please upload images first.
+                    </div>
+                  ) : (
+                    <>
+                      {/* Option: None (Auto-generate Cover) */}
+                      <label
+                        className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                          autoReelCoverItem === null
+                            ? "border-primary bg-primary/5"
+                            : "border-border bg-surface hover:bg-surface-elevated"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="autoReelCover"
+                          checked={autoReelCoverItem === null}
+                          onChange={() => setAutoReelCoverItem(null)}
+                          className="w-4 h-4 border-border text-primary focus:ring-primary cursor-pointer"
+                        />
+                        <div className="w-14 h-14 bg-surface-elevated rounded flex items-center justify-center flex-shrink-0 relative overflow-hidden border border-border">
+                          <ImageIcon size={18} className="text-text-muted" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground">
+                            None (Auto-generate Cover)
+                          </p>
+                          <p className="text-xs text-text-muted mt-0.5">
+                            Instagram will use the first frame of each video as the cover
+                          </p>
+                        </div>
+                      </label>
+
+                      {/* List of images */}
+                      {galleryItems
+                        .filter((item) => item.kind === "image")
+                        .map((item) => (
+                          <label
+                            key={item.id}
+                            className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                              autoReelCoverItem?.mediaId === item.id
+                                ? "border-primary bg-primary/5"
+                                : "border-border bg-surface hover:bg-surface-elevated"
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="autoReelCover"
+                              checked={autoReelCoverItem?.mediaId === item.id}
+                              onChange={() =>
+                                setAutoReelCoverItem({
+                                  mediaId: item.id,
+                                  publicUrl: item.public_url,
+                                })
+                              }
+                              className="w-4 h-4 border-border text-primary focus:ring-primary cursor-pointer"
+                            />
+                            <div className="w-14 h-14 bg-black/10 rounded flex items-center justify-center flex-shrink-0 relative overflow-hidden">
+                              <img
+                                src={item.public_url}
+                                alt={item.file_name}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-foreground truncate">
+                                {item.file_name}
+                              </p>
+                              <p className="text-xs text-text-muted mt-0.5">
+                                Uploaded {new Date(item.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </label>
+                        ))}
+                    </>
+                  )}
+                </div>
               </div>
 
               {error && (
