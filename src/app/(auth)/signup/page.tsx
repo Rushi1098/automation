@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -15,8 +15,37 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
   const supabase = createClient();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+        <div className="w-full max-w-[400px]">
+          <div className="flex flex-col items-center mb-8">
+            <div className="w-32 h-10 mb-4 bg-surface-elevated rounded animate-pulse" />
+            <h1 className="text-2xl font-bold tracking-[-0.8px] font-[family-name:var(--font-heading)] text-foreground">
+              Create your account
+            </h1>
+            <p className="text-text-muted text-sm mt-1">
+              Get started with {BRANDING.name}
+            </p>
+          </div>
+          <div className="space-y-4 animate-pulse">
+            <div className="h-12 bg-surface-elevated rounded-lg w-full" />
+            <div className="h-12 bg-surface-elevated rounded-lg w-full" />
+            <div className="h-12 bg-surface-elevated rounded-lg w-full" />
+            <div className="h-10 bg-surface-elevated rounded-lg w-full mt-6" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();

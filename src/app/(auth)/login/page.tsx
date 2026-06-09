@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -13,8 +13,36 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
   const supabase = createClient();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+        <div className="w-full max-w-[400px]">
+          <div className="flex flex-col items-center mb-8">
+            <div className="w-32 h-10 mb-4 bg-surface-elevated rounded animate-pulse" />
+            <h1 className="text-2xl font-bold tracking-[-0.8px] font-[family-name:var(--font-heading)] text-foreground">
+              Welcome back
+            </h1>
+            <p className="text-text-muted text-sm mt-1">
+              Sign in to your account to continue
+            </p>
+          </div>
+          <div className="space-y-4 animate-pulse">
+            <div className="h-12 bg-surface-elevated rounded-lg w-full" />
+            <div className="h-12 bg-surface-elevated rounded-lg w-full" />
+            <div className="h-10 bg-surface-elevated rounded-lg w-full mt-6" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -32,8 +60,9 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/dashboard");
-    router.refresh();
+    // Force a full page reload to ensure the new session cookies are properly
+    // propagated to Server Components and Middleware in Next.js.
+    window.location.href = "/dashboard";
   }
 
   return (
